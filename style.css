@@ -1,0 +1,309 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap');
+
+:root {
+    /* Warm Childish Gradient Colors */
+    --warm-1: #ff9a9e;
+    --warm-2: #fecfef;
+    --warm-3: #feca57;
+
+    /* Key Colors */
+    --drum-1: #ff6b6b;
+    --drum-2: #4ecdc4;
+    --drum-3: #ffe66d;
+}
+
+* {
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+}
+
+body {
+    margin: 0;
+    height: 100vh;
+    /* Red-Rose-Yellow Childish Gradient */
+    background: linear-gradient(135deg, #ff9ff3 0%, #feca57 50%, #ff6b6b 100%);
+    font-family: 'Fredoka One', cursive;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#main-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr 220px;
+    grid-template-rows: 100%;
+    width: 100%;
+    height: 100vh;
+    gap: 10px;
+    padding: 10px;
+}
+
+/* --- SIDEBARS --- */
+.instrument-panel {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 20px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+    border: 3px solid rgba(255, 255, 255, 0.5);
+}
+
+.instrument-panel::-webkit-scrollbar {
+    display: none;
+}
+
+.panel-title {
+    margin: 0 0 10px 0;
+    text-align: center;
+    color: white;
+    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+    font-size: 1.2rem;
+    line-height: 1.2;
+}
+
+.instrument-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    /* 2 Columns */
+    gap: 10px;
+    width: 100%;
+}
+
+.inst-icon {
+    width: 100%;
+    aspect-ratio: 1;
+    /* Square */
+    background: white;
+    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 0.9rem;
+    text-align: center;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.1);
+    transition: all 0.1s;
+    border: 3px solid transparent;
+}
+
+.inst-icon span,
+.inst-icon {
+    font-size: 2rem;
+}
+
+/* Emoji Size */
+.inst-icon div {
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+/* Text Label if separated, but currently br is used. */
+/* Fix text size inside icon */
+.inst-icon {
+    font-size: 0.9rem;
+}
+
+.inst-icon::first-line {
+    font-size: 2.5rem;
+    line-height: 1.2;
+}
+
+/* Try to target emoji */
+
+.inst-icon.active {
+    background: #fff200;
+    border: 4px solid #ff9f43;
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(255, 255, 0, 0.5);
+    z-index: 2;
+}
+
+.inst-icon:active {
+    transform: scale(0.95);
+}
+
+
+/* --- CENTER STAGE --- */
+#center-stage {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 20px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 30px;
+}
+
+.row-section {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.keys-container {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+/* --- Keys Styling (Preserved) --- */
+.key {
+    cursor: pointer;
+    transition: transform 0.1s;
+    font-size: 1.5rem;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 6px 0 rgba(0, 0, 0, 0.2);
+    position: relative;
+    font-weight: bold;
+}
+
+.key:active,
+.key.active {
+    transform: translateY(6px);
+    box-shadow: none !important;
+}
+
+/* Piano */
+.key.piano {
+    width: 8%;
+    min-width: 50px;
+    height: 100px;
+    background-color: white;
+    border-radius: 0 0 10px 10px;
+    border: 2px solid #333;
+    align-items: flex-end;
+    padding-bottom: 10px;
+}
+
+/* Rainbow */
+.key.piano:nth-child(1) {
+    border-bottom: 15px solid #ff7675;
+}
+
+.key.piano:nth-child(2) {
+    border-bottom: 15px solid #bdc3c7;
+}
+
+.key.piano:nth-child(3) {
+    border-bottom: 15px solid #ffeaa7;
+}
+
+.key.piano:nth-child(4) {
+    border-bottom: 15px solid #55efc4;
+}
+
+.key.piano:nth-child(5) {
+    border-bottom: 15px solid #74b9ff;
+}
+
+.key.piano:nth-child(6) {
+    border-bottom: 15px solid #a29bfe;
+}
+
+.key.piano:nth-child(7) {
+    border-bottom: 15px solid #fd79a8;
+}
+
+.key.piano:nth-child(8) {
+    border-bottom: 15px solid #6c5ce7;
+}
+
+.key.piano:nth-child(9) {
+    border-bottom: 15px solid #00b894;
+}
+
+.key.piano:nth-child(10) {
+    border-bottom: 15px solid #e17055;
+}
+
+.key.piano.active {
+    background: #f0f0f0;
+}
+
+/* Round (Row 2) */
+.key.round {
+    width: 65px;
+    height: 65px;
+    background: #f1c40f;
+    border-radius: 50%;
+    border: 4px solid #fff;
+    color: #fff;
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.2);
+}
+
+.key.round:active,
+.key.round.active {
+    background: #f39c12;
+}
+
+/* Drums (Row 3) */
+.key.drum {
+    width: 75px;
+    height: 75px;
+    border-radius: 50%;
+    border: 4px solid white;
+    color: white;
+    text-shadow: 1px 1px 0 #333;
+}
+
+.key.drum {
+    background-color: var(--drum-2);
+}
+
+.key.drum:nth-child(odd) {
+    background-color: var(--drum-1);
+}
+
+.key.drum:nth-child(3n) {
+    background-color: var(--drum-3);
+}
+
+/* --- Lock --- */
+#lock-btn {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    /* But now layout is full width, maybe put it inside sidebar right top? or absolute */
+    font-size: 1.5rem;
+    background: white;
+    border: 3px solid #333;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+    z-index: 1000;
+    box-shadow: 0 4px 0 #333;
+}
+
+#lock-btn.locked-state {
+    background: #ff4757;
+    color: white;
+}
+
+#lock-trap {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 2000;
+    color: white;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 2rem;
+}

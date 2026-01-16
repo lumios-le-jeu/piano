@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magie Musicale - Sidebars</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <button id="lock-btn">🔓</button>
+
+    <div id="lock-trap">
+        <div>⛔ PAUSE ⛔</div>
+        <p>Clique pour revenir à la musique !</p>
+    </div>
+
+    <div id="main-layout">
+
+        <!-- LEFT SIDEBAR: Row 1 Instruments -->
+        <aside id="sidebar-left" class="instrument-panel">
+            <h3 class="panel-title">Ligne 1<br>(Haut)</h3>
+            <div class="instrument-grid" id="bar-row-1" data-row="1">
+                <div class="inst-icon active" data-inst="piano">🎹<br>Piano</div>
+                <div class="inst-icon" data-inst="violin">🎻<br>Violon</div>
+                <div class="inst-icon" data-inst="flute">🪄<br>Flûte</div>
+                <div class="inst-icon" data-inst="trumpet">🎺<br>Tromp.</div>
+                <div class="inst-icon" data-inst="clarinet">🌭<br>Clarin.</div>
+                <div class="inst-icon" data-inst="oboe">🦆<br>Hautbois</div>
+                <div class="inst-icon" data-inst="harp">🧚<br>Harpe</div>
+                <div class="inst-icon" data-inst="celesta">🔔<br>Célesta</div>
+                <div class="inst-icon" data-inst="organ">⛪<br>Orgue</div>
+                <div class="inst-icon" data-inst="marimba">🥢<br>Marimba</div>
+            </div>
+        </aside>
+
+        <!-- CENTER: Keys -->
+        <main id="center-stage">
+
+            <!-- Row 1 Wrapper -->
+            <div class="row-section">
+                <div class="keys-container">
+                    <div class="key piano" data-row="1" data-note="C4">A</div>
+                    <div class="key piano" data-row="1" data-note="D4">Z</div>
+                    <div class="key piano" data-row="1" data-note="E4">E</div>
+                    <div class="key piano" data-row="1" data-note="F4">R</div>
+                    <div class="key piano" data-row="1" data-note="G4">T</div>
+                    <div class="key piano" data-row="1" data-note="A4">Y</div>
+                    <div class="key piano" data-row="1" data-note="B4">U</div>
+                    <div class="key piano" data-row="1" data-note="C5">I</div>
+                    <div class="key piano" data-row="1" data-note="D5">O</div>
+                    <div class="key piano" data-row="1" data-note="E5">P</div>
+                </div>
+            </div>
+
+            <!-- Row 2 Wrapper -->
+            <div class="row-section">
+                <div class="keys-container">
+                    <div class="key round" data-row="2" data-note="C4">Q</div>
+                    <div class="key round" data-row="2" data-note="D4">S</div>
+                    <div class="key round" data-row="2" data-note="E4">D</div>
+                    <div class="key round" data-row="2" data-note="F4">F</div>
+                    <div class="key round" data-row="2" data-note="G4">G</div>
+                    <div class="key round" data-row="2" data-note="A4">H</div>
+                    <div class="key round" data-row="2" data-note="B4">J</div>
+                    <div class="key round" data-row="2" data-note="C5">K</div>
+                    <div class="key round" data-row="2" data-note="D5">L</div>
+                    <div class="key round" data-row="2" data-note="E5">M</div>
+                </div>
+            </div>
+
+            <!-- Row 3 Wrapper -->
+            <div class="row-section">
+                <div class="keys-container">
+                    <div class="key drum" data-row="3" data-sound="kick">W</div>
+                    <div class="key drum" data-row="3" data-sound="snare">X</div>
+                    <div class="key drum" data-row="3" data-sound="hihat">C</div>
+                    <div class="key drum" data-row="3" data-sound="openhat">V</div>
+                    <div class="key drum" data-row="3" data-sound="tom1">B</div>
+                    <div class="key drum" data-row="3" data-sound="crash">N</div>
+                    <div class="key drum" data-row="3" data-sound="kick">ESPACE</div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- RIGHT SIDEBAR: Row 2 Instruments -->
+        <aside id="sidebar-right" class="instrument-panel">
+            <h3 class="panel-title">Ligne 2<br>(Milieu)</h3>
+            <div class="instrument-grid" id="bar-row-2" data-row="2">
+                <div class="inst-icon active" data-inst="guitar">🎸<br>Guitare</div>
+                <div class="inst-icon" data-inst="saxophone">🎷<br>Saxo</div>
+                <div class="inst-icon" data-inst="banjo">🪕<br>Banjo</div>
+                <div class="inst-icon" data-inst="accordion">🪗<br>Accord.</div>
+                <div class="inst-icon" data-inst="sitar">🇮🇳<br>Sitar</div>
+                <div class="inst-icon" data-inst="koto">🇯🇵<br>Koto</div>
+                <div class="inst-icon" data-inst="steeldrum">🏝️<br>SteelD</div>
+                <div class="inst-icon" data-inst="8bit">👾<br>8-Bit</div>
+                <div class="inst-icon" data-inst="bass">🎸<br>Basse</div>
+                <div class="inst-icon" data-inst="synth">🎹<br>Synthé</div>
+            </div>
+        </aside>
+
+    </div>
+
+    <script src="audio.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

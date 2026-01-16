@@ -25,6 +25,9 @@ let isLocked = false;
 let instRow1 = 'piano';
 let instRow2 = 'guitar';
 
+// Track active notes to support sustain
+const activeVoices = {}; // Key: { stop(), element }
+
 // --- Lock Handling ---
 const lockBtn = document.getElementById('lock-btn');
 const lockTrap = document.getElementById('lock-trap');
@@ -75,7 +78,6 @@ function selectInstrument(row, name) {
     if (row === 1) instRow1 = name;
     if (row === 2) instRow2 = name;
 
-    // Update UI for that specific list
     const container = document.getElementById(`bar-row-${row}`);
     if (container) {
         container.querySelectorAll('.inst-icon').forEach(el => {
@@ -85,15 +87,16 @@ function selectInstrument(row, name) {
     }
 
     engine.resume();
-    // Play a preview note
-    engine.playInstrument(name, 440, 0.2);
+    // Preview : Short note
+    const voice = engine.startTone(name, 440);
+    setTimeout(() => voice.stop(), 200);
 }
 
 // Bind Listeners for both bars
 document.querySelectorAll('.inst-icon').forEach(icon => {
     icon.addEventListener('click', (e) => {
         e.stopPropagation();
-        const row = parseInt(icon.parentElement.dataset.row); // get row from parent
+        const row = parseInt(icon.parentElement.dataset.row);
         selectInstrument(row, icon.dataset.inst);
     });
     icon.addEventListener('touchstart', (e) => {
@@ -105,31 +108,50 @@ document.querySelectorAll('.inst-icon').forEach(icon => {
 });
 
 
-// --- Interaction Logic ---
-function triggerAction(source, value, element) {
-    engine.resume();
+// --- Interaction Logic (Start / Stop) ---
 
-    // Determine Instrument
+function startAction(id, source, value, element) {
+    if (activeVoices[id]) return; // Already playing
+
+    engine.resume();
+    let voice = null;
+
     if (source === 'row1') {
-        engine.playInstrument(instRow1, notes[value]);
+        voice = engine.startTone(instRow1, notes[value]);
     } else if (source === 'row2') {
-        engine.playInstrument(instRow2, notes[value]);
+        voice = engine.startTone(instRow2, notes[value]);
     } else if (source === 'drum') {
-        engine.playDrum(value);
+        engine.playDrum(value); // Drums are still one-shot
+        // Start visual only
+        if (element) {
+            element.classList.add('active');
+            createSparkles(element);
+            setTimeout(() => element.classList.remove('active'), 150);
+        }
+        return;
     }
 
-    // Visuals
-    if (element) {
+    if (voice && element) {
+        activeVoices[id] = { voice, element };
         element.classList.add('active');
         createSparkles(element);
-        setTimeout(() => element.classList.remove('active'), 150);
     }
 }
+
+function stopAction(id) {
+    if (activeVoices[id]) {
+        const { voice, element } = activeVoices[id];
+        if (voice && voice.stop) voice.stop();
+        if (element) element.classList.remove('active');
+        delete activeVoices[id];
+    }
+}
+
 
 // --- Input Handling ---
 document.addEventListener('keydown', (e) => {
     if (isLocked) { e.preventDefault(); e.stopPropagation(); }
-    if (e.repeat) return;
+    if (e.repeat) return; // Ignore hold repeat, we handle sustain manually
 
     const key = e.key.toLowerCase();
 
@@ -138,7 +160,7 @@ document.addEventListener('keydown', (e) => {
     if (pIndex !== -1) {
         const note = row1Notes[pIndex];
         const el = document.querySelector(`.key[data-row="1"][data-note="${note}"]`);
-        triggerAction('row1', note, el);
+        startAction(key, 'row1', note, el);
         return;
     }
 
@@ -147,39 +169,52 @@ document.addEventListener('keydown', (e) => {
     if (tIndex !== -1) {
         const note = row2Notes[tIndex];
         const el = document.querySelector(`.key[data-row="2"][data-note="${note}"]`);
-        triggerAction('row2', note, el);
+        startAction(key, 'row2', note, el);
         return;
     }
 
-    // 3. Drums
+    // 3. Drums (One-shot)
     if (specificDrumKeys[key]) {
         const sound = specificDrumKeys[key];
         const el = document.querySelector(`.key[data-row="3"][data-sound="${sound}"]`);
-        triggerAction('drum', sound, el);
+        startAction('drum-' + key, 'drum', sound, el);
         return;
     }
-
-    // 4. Random Drum
-    const randSound = randomDrumSounds[Math.floor(Math.random() * randomDrumSounds.length)];
-    const drumPads = document.querySelectorAll(`.key[data-row="3"]`);
-    const randomPad = drumPads[Math.floor(Math.random() * drumPads.length)];
-    triggerAction('drum', randSound, randomPad);
 });
 
+document.addEventListener('keyup', (e) => {
+    const key = e.key.toLowerCase();
+    stopAction(key);
+});
+
+// --- Mouse / Touch ---
 function attachListeners() {
     document.querySelectorAll('.key').forEach(el => {
-        const handle = (e) => {
+        // Unique ID for mouse interactions
+        const id = 'mouse-' + (el.dataset.note || el.dataset.sound) + '-' + el.dataset.row;
+
+        const start = (e) => {
             e.preventDefault();
             const row = el.dataset.row;
             let type = 'drum';
             if (row === '1') type = 'row1';
             if (row === '2') type = 'row2';
-
-            const noteOrSound = el.dataset.note || el.dataset.sound;
-            triggerAction(type, noteOrSound, el);
+            const val = el.dataset.note || el.dataset.sound;
+            startAction(id, type, val, el);
         };
-        el.addEventListener('mousedown', handle);
-        el.addEventListener('touchstart', handle);
+
+        const stop = (e) => {
+            e.preventDefault();
+            stopAction(id);
+        };
+
+        el.addEventListener('mousedown', start);
+        el.addEventListener('touchstart', start);
+
+        el.addEventListener('mouseup', stop);
+        el.addEventListener('mouseleave', stop);
+        el.addEventListener('touchend', stop);
+        el.addEventListener('touchcancel', stop);
     });
 }
 if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', attachListeners); }

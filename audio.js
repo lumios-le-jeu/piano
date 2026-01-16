@@ -12,203 +12,207 @@ class AudioEngine {
         }
     }
 
-    playInstrument(name, frequency, duration = 0.5) {
+    // Returns a "voice" object: { osc, osc2, gainNode, stop: function() }
+    startTone(name, frequency) {
         const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
+        let gainNode = this.ctx.createGain();
+        let filter = null;
 
-        // --- Helper for Envelope ---
-        const createEnv = (attack, decay, sustain, release) => {
-            const gain = this.ctx.createGain();
-            const sus = Math.max(0.001, sustain); // Prevent exponential ramp to 0 error
-            gain.gain.setValueAtTime(0, now);
-            gain.gain.linearRampToValueAtTime(1, now + attack);
-            gain.gain.exponentialRampToValueAtTime(sus, now + attack + decay);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + duration + release);
-            return gain;
+        // Default stop function (overridden per instrument if needed)
+        // We attach this to the return object so the App can call voice.stop()
+        const stop = () => {
+            const release = 0.2;
+            const t = this.ctx.currentTime;
+            gainNode.gain.cancelScheduledValues(t);
+            gainNode.gain.setValueAtTime(gainNode.gain.value, t);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, t + release);
+            osc.stop(t + release + 0.1);
+            if (name === 'accordion' || name === 'steeldrum' || name === 'synth' || name === 'organ') {
+                osc2.stop(t + release + 0.1);
+            }
         };
 
-        const osc = this.ctx.createOscillator();
-        const osc2 = this.ctx.createOscillator(); // Secondary osc for thickness
-        let gainNode;
+        // --- Helper: Attack to Sustain ---
+        // We no longer ramp to 0 automatically. We ramp to 'sustainLevel' and stay there.
+        const applyEnvelope = (attack, decay, sustainLevel) => {
+            gainNode.gain.setValueAtTime(0, now);
+            gainNode.gain.linearRampToValueAtTime(1, now + attack);
+            // Decays to sustainLevel and HOLDS
+            gainNode.gain.exponentialRampToValueAtTime(Math.max(0.001, sustainLevel), now + attack + decay);
+        };
 
         switch (name) {
             case 'piano':
                 osc.type = 'triangle';
-                gainNode = createEnv(0.01, 0.1, 0.5, 0.4);
-                // Filter for "thud"
-                const pFilter = this.ctx.createBiquadFilter();
-                pFilter.type = 'lowpass';
-                pFilter.frequency.value = 1000;
-                osc.connect(pFilter);
-                pFilter.connect(gainNode);
+                // Piano decays naturally even if held, but we'll let it sustain a bit for "pad" feel or just long decay?
+                // Actually true piano decays. Let's make it sustain slightly to satisfy user request "continue le son"
+                applyEnvelope(0.01, 0.3, 0.2);
+
+                filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 1000;
+                osc.connect(filter);
+                filter.connect(gainNode);
                 break;
 
             case 'trumpet':
                 osc.type = 'sawtooth';
-                gainNode = createEnv(0.05, 0.1, 0.8, 0.2);
-                const tFilter = this.ctx.createBiquadFilter();
-                tFilter.type = 'lowpass';
-                tFilter.frequency.setValueAtTime(500, now);
-                tFilter.frequency.linearRampToValueAtTime(2500, now + 0.1); // Brass "blare"
-                osc.connect(tFilter);
-                tFilter.connect(gainNode);
+                applyEnvelope(0.05, 0.1, 0.8);
+                filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(500, now);
+                filter.frequency.linearRampToValueAtTime(2500, now + 0.1);
+                osc.connect(filter);
+                filter.connect(gainNode);
                 break;
 
             case 'flute':
                 osc.type = 'sine';
-                // Slight vibrato
                 osc.frequency.setValueAtTime(frequency, now);
-                // Breath noise? Keep simple for now.
-                gainNode = createEnv(0.1, 0.1, 0.9, 0.2);
+                applyEnvelope(0.1, 0.1, 0.9);
                 osc.connect(gainNode);
                 break;
 
             case 'violin':
                 osc.type = 'sawtooth';
-                gainNode = createEnv(0.3, 0.2, 0.8, 0.5); // Slow attack (bowing)
-                const vFilter = this.ctx.createBiquadFilter();
-                vFilter.type = 'highpass'; // Thin sound
-                vFilter.frequency.value = 500;
-                osc.connect(vFilter);
-                vFilter.connect(gainNode);
+                applyEnvelope(0.3, 0.2, 0.8);
+                filter = this.ctx.createBiquadFilter();
+                filter.type = 'highpass';
+                filter.frequency.value = 500;
+                osc.connect(filter);
+                filter.connect(gainNode);
                 break;
 
             case 'guitar':
-                osc.type = 'sawtooth'; // Brighter, twangier
-                gainNode = createEnv(0.005, 0.4, 0.0, 0.1); // Sharp pluck, no sustain
-                const gFilter = this.ctx.createBiquadFilter();
-                gFilter.type = 'lowpass';
-                gFilter.frequency.setValueAtTime(3000, now);
-                gFilter.frequency.exponentialRampToValueAtTime(500, now + 0.2); // Filter "wah" / pluck
-                osc.connect(gFilter);
-                gFilter.connect(gainNode);
+                osc.type = 'sawtooth';
+                // Guitar fails to sustain usually, but we force it for this mode
+                applyEnvelope(0.01, 0.4, 0.2);
+                filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(3000, now);
+                filter.frequency.exponentialRampToValueAtTime(500, now + 0.2);
+                osc.connect(filter);
+                filter.connect(gainNode);
                 break;
 
             case 'saxophone':
                 osc.type = 'square';
-                gainNode = createEnv(0.1, 0.1, 0.8, 0.2);
-                const sFilter = this.ctx.createBiquadFilter();
-                sFilter.type = 'lowpass';
-                sFilter.frequency.setValueAtTime(400, now);
-                sFilter.frequency.exponentialRampToValueAtTime(3000, now + 0.1); // Growl
-                osc.connect(sFilter);
-                sFilter.connect(gainNode);
+                applyEnvelope(0.1, 0.1, 0.8);
+                filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(400, now);
+                filter.frequency.exponentialRampToValueAtTime(3000, now + 0.1);
+                osc.connect(filter);
+                filter.connect(gainNode);
                 break;
 
             case 'marimba':
                 osc.type = 'sine';
-                gainNode = createEnv(0.01, 0.05, 0.0, 0.1); // Very short
-                gainNode.gain.setValueAtTime(0, now);
-                gainNode.gain.linearRampToValueAtTime(1, now + 0.01);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.3); // Explicit fast decay
+                // Marimba is short. Force a little sustain?
+                applyEnvelope(0.01, 0.1, 0.0); // Natural decay to silence
+                // Override stop to be instant since it's already gone? 
+                // Let's keep it typical marimba: decays anyway.
                 osc.connect(gainNode);
                 break;
 
             case 'banjo':
-                osc.type = 'sawtooth'; // Twangy
-                gainNode = createEnv(0.01, 0.2, 0.1, 0.1);
-                const bFilter = this.ctx.createBiquadFilter();
-                bFilter.type = 'highpass';
-                bFilter.frequency.value = 1000; // Thin it out
-                osc.connect(bFilter);
-                bFilter.connect(gainNode);
+                osc.type = 'sawtooth';
+                applyEnvelope(0.01, 0.2, 0.1);
+                filter = this.ctx.createBiquadFilter();
+                filter.type = 'highpass';
+                filter.frequency.value = 1000;
+                osc.connect(filter);
+                filter.connect(gainNode);
                 break;
 
             case 'synth':
                 osc.type = 'sawtooth';
-                osc2.type = 'square'; // Detune
+                osc2.type = 'square';
                 osc2.frequency.setValueAtTime(frequency * 1.01, now);
-
-                const sGain = createEnv(0.01, 0.1, 0.5, 0.5);
-
-                osc.connect(sGain);
-                osc2.connect(sGain);
-
-                gainNode = sGain;
-                osc2.start();
-                osc2.stop(now + duration + 0.5);
-                break; // Special case with 2 oscs
+                osc2.start(now);
+                applyEnvelope(0.01, 0.1, 0.5);
+                osc.connect(gainNode);
+                osc2.connect(gainNode);
+                break;
 
             case 'oboe':
                 osc.type = 'sawtooth';
-                gainNode = createEnv(0.05, 0.1, 0.8, 0.2);
-                const obFilter = this.ctx.createBiquadFilter();
-                obFilter.type = 'bandpass';
-                obFilter.frequency.value = 1500; // Nasal quality
-                obFilter.Q.value = 1;
-                osc.connect(obFilter);
-                obFilter.connect(gainNode);
+                applyEnvelope(0.05, 0.1, 0.8);
+                filter = this.ctx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.value = 1500;
+                filter.Q.value = 1;
+                osc.connect(filter);
+                filter.connect(gainNode);
                 break;
 
             case 'harp':
                 osc.type = 'triangle';
-                gainNode = createEnv(0.01, 0.5, 0.1, 0.5); // Long clean decay
+                applyEnvelope(0.01, 0.5, 0.1);
                 osc.connect(gainNode);
                 break;
 
             case 'celesta':
                 osc.type = 'sine';
-                gainNode = createEnv(0.001, 0.2, 0.0, 0.2); // Bell like
-                osc.frequency.setValueAtTime(frequency * 2, now); // Higher pitch
+                osc.frequency.setValueAtTime(frequency * 2, now);
+                applyEnvelope(0.001, 0.2, 0.0); // Bell like
                 osc.connect(gainNode);
                 break;
 
             case 'accordion':
                 osc.type = 'square';
-                // Need rich harmonics
                 osc2.type = 'square';
-                osc2.frequency.setValueAtTime(frequency * 1.005, now); // Detune
-                osc2.start(now); osc2.stop(now + duration + 0.5);
-
-                const accGain = createEnv(0.05, 0.1, 0.9, 0.2);
-                osc.connect(accGain);
-                osc2.connect(accGain);
-                gainNode = accGain;
+                osc2.frequency.setValueAtTime(frequency * 1.005, now);
+                osc2.start(now);
+                applyEnvelope(0.05, 0.1, 0.9);
+                osc.connect(gainNode);
+                osc2.connect(gainNode);
                 break;
 
             case 'sitar':
                 osc.type = 'sawtooth';
-                gainNode = createEnv(0.01, 0.3, 0.5, 0.5);
-                const siFilter = this.ctx.createBiquadFilter();
-                siFilter.type = 'lowpass';
-                siFilter.frequency.setValueAtTime(3000, now);
-                siFilter.frequency.exponentialRampToValueAtTime(100, now + 0.3); // "Twang"
-                siFilter.Q.value = 5; // Resonance
-                osc.connect(siFilter);
-                siFilter.connect(gainNode);
+                applyEnvelope(0.01, 0.3, 0.5);
+                filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(3000, now);
+                filter.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+                filter.Q.value = 5;
+                osc.connect(filter);
+                filter.connect(gainNode);
                 break;
 
             case 'koto':
                 osc.type = 'triangle';
-                gainNode = createEnv(0.01, 0.1, 0.0, 0.1); // Short pluck
-                const kFilter = this.ctx.createBiquadFilter();
-                kFilter.type = 'highpass';
-                kFilter.frequency.value = 800;
-                osc.connect(kFilter);
-                kFilter.connect(gainNode);
+                applyEnvelope(0.01, 0.1, 0.0);
+                filter = this.ctx.createBiquadFilter();
+                filter.type = 'highpass';
+                filter.frequency.value = 800;
+                osc.connect(filter);
+                filter.connect(gainNode);
                 break;
 
             case 'steeldrum':
                 osc.type = 'sine';
                 osc2.type = 'sine';
-                osc2.frequency.setValueAtTime(frequency * 2.5, now); // Harmonic
-                osc2.start(now); osc2.stop(now + duration + 0.5);
-
-                const sdGain = createEnv(0.01, 0.2, 0.0, 0.1);
-                osc.connect(sdGain);
-                osc2.connect(sdGain);
-                gainNode = sdGain;
+                osc2.frequency.setValueAtTime(frequency * 2.5, now);
+                osc2.start(now);
+                applyEnvelope(0.01, 0.2, 0.0);
+                osc.connect(gainNode);
+                osc2.connect(gainNode);
                 break;
 
             case '8bit':
                 osc.type = 'square';
-                gainNode = createEnv(0.001, 0.1, 0.5, 0.1); // Blocky
+                applyEnvelope(0.001, 0.1, 0.5);
                 osc.connect(gainNode);
                 break;
 
             case 'bass':
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(frequency * 0.5, now); // Octave down
-                gainNode = createEnv(0.01, 0.3, 0.5, 0.2);
+                osc.frequency.setValueAtTime(frequency * 0.5, now);
+                applyEnvelope(0.01, 0.3, 0.5);
                 osc.connect(gainNode);
                 break;
 
@@ -216,44 +220,42 @@ class AudioEngine {
                 osc.type = 'triangle';
                 osc2.type = 'sine';
                 osc2.frequency.setValueAtTime(frequency * 2, now);
-                osc2.start(now); osc2.stop(now + duration + 0.5);
-
-                const orgGain = createEnv(0.05, 0.1, 1.0, 0.1); // Sustain
-                osc.connect(orgGain);
-                osc2.connect(orgGain);
-                gainNode = orgGain;
+                osc2.start(now);
+                applyEnvelope(0.05, 0.1, 1.0); // Full sustain
+                osc.connect(gainNode);
+                osc2.connect(gainNode);
                 break;
 
             case 'clarinet':
-                osc.type = 'square'; // Hollow sound
-                gainNode = createEnv(0.05, 0.1, 0.8, 0.2);
-                const cFilter = this.ctx.createBiquadFilter();
-                cFilter.type = 'lowpass';
-                cFilter.frequency.value = 2000;
-                osc.connect(cFilter);
-                cFilter.connect(gainNode);
+                osc.type = 'square';
+                applyEnvelope(0.05, 0.1, 0.8);
+                filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 2000;
+                osc.connect(filter);
+                filter.connect(gainNode);
                 break;
 
-            default: // Default to piano
+            default:
                 osc.type = 'triangle';
-                gainNode = createEnv(0.01, 0.1, 0.5, 0.4);
+                applyEnvelope(0.01, 0.1, 0.5);
                 osc.connect(gainNode);
                 break;
         }
 
-        if (name !== 'synth') {
-            // Standard path
+        gainNode.connect(this.masterGain);
+
+        // Only set frequency if not processed inside switch (like flute/celesta special cases)
+        // Some cases above set freq manually or use filters. 
+        // Safer to set it if default logic applies? 
+        // Most cases above just set type/filter. But they rely on this check:
+        if (name !== 'flute' && name !== 'celesta' && name !== 'bass' && name !== 'synth' && name !== 'steeldrum' && name !== 'organ' && name !== 'accordion') {
             osc.frequency.setValueAtTime(frequency, now);
-            gainNode.connect(this.masterGain);
-            osc.start();
-            osc.stop(now + duration + 0.5); // Add release tail
-        } else {
-            // Synth already connected
-            gainNode.connect(this.masterGain);
-            osc.frequency.setValueAtTime(frequency, now);
-            osc.start();
-            osc.stop(now + duration + 0.5);
         }
+
+        osc.start(now);
+
+        return { osc, gainNode, stop };
     }
 
     playTrumpet(frequency, duration = 0.5) {
